@@ -7,6 +7,7 @@ import random
 import os
 import string
 import threading
+import muti
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -73,10 +74,10 @@ class fun():
         return soup
 
     # 创建期刊编号文件夹
-    def mkdir(self,alt):
+    def mkdir(self, alt):
         i = str(self.page_id)
         s = str(alt)
-        name = u'vol.%s《%s》' %(i,s)
+        name = u'vol.%s《%s》' % (i, s)
         if os.path.exists(name):
             os.chdir(name)
         else:
@@ -107,24 +108,29 @@ class fun():
                 song_info = song_info.replace(':', '-')
                 song_list.append(song_info)
             song_num = 1
-            name_reg = ['<','>','/','\\','|','\"','*','?']
+            name_reg = ['<', '>', '/', '\\', '|', '\"', '*', '?', '&', '$']
             for song in song_list:
                 for i in name_reg:
                     if i in song:
-                        song = song.replace(i,'')
+                        song = song.replace(i, '')
                 if os.path.exists(song + '.mp3'):
                     pass
                 else:
                     try:
+
                         url = 'http://luoo-mp3.kssws.ks-cdn.com/low/luoo/radio' + \
                             self.page_id + '/' + str(song_num) + '.mp3'
+                        '''
                         r = requests.get(url)
                         with open(song + '.mp3', 'wb') as song:
                             song.write(r.content)
+                        '''
                         song_num += 1
-                    except Exception,e:
+                        muti.download_file(url=url, file_name=song + '.mp3')
+                    except Exception as e:
                         with open(song + '.mp3', 'wb') as song:
                             song.write(r.content)
+
         except Exception as e:
             print str(e)
         os.chdir('../')
