@@ -107,16 +107,27 @@ class fun():
                 song_info = song_info.replace(':', '-')
                 song_list.append(song_info)
             song_num = 1
+            name_reg = ['<','>','/','\\','|','\"','*','?']
             for song in song_list:
-                url = 'http://luoo-mp3.kssws.ks-cdn.com/low/luoo/radio' + \
-                    self.page_id + '/' + str(song_num) + '.mp3'
-                r = requests.get(url)
-                with open(song + '.mp3', 'wb') as song:
-                    song.write(r.content)
-                song_num += 1
-            os.chdir('../')
+                for i in name_reg:
+                    if i in song:
+                        song = song.replace(i,'')
+                if os.path.exists(song + '.mp3'):
+                    pass
+                else:
+                    try:
+                        url = 'http://luoo-mp3.kssws.ks-cdn.com/low/luoo/radio' + \
+                            self.page_id + '/' + str(song_num) + '.mp3'
+                        r = requests.get(url)
+                        with open(song + '.mp3', 'wb') as song:
+                            song.write(r.content)
+                        song_num += 1
+                    except Exception,e:
+                        with open(song + '.mp3', 'wb') as song:
+                            song.write(r.content)
         except Exception as e:
             print str(e)
+        os.chdir('../')
 
     # 调用
     def run(self):
@@ -129,8 +140,11 @@ class fun():
         for t in threads:
             t.setDaemon(True)
             t.start()
+fail = []
 page_id = 1
 while True:
     luowang = fun(page_id=page_id)
+    print u'正在下载第 %s 期...' % str(page_id)
     luowang.run()
+    print u'第 %s 期下载完成。' % str(page_id)
     page_id += 1
