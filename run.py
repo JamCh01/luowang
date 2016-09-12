@@ -7,7 +7,6 @@ import random
 import os
 import string
 import threading
-import Queue
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -74,19 +73,22 @@ class fun():
         return soup
 
     # 创建期刊编号文件夹
-    def mkdir(self):
-        if os.path.exists(self.page_id):
-            os.chdir(self.page_id)
+    def mkdir(self,alt):
+        i = str(self.page_id)
+        s = str(alt)
+        name = u'vol.%s《%s》' %(i,s)
+        if os.path.exists(name):
+            os.chdir(name)
         else:
-            os.makedirs(self.page_id)
-            os.chdir(self.page_id)
+            os.makedirs(name)
+            os.chdir(name)
 
     # 下载期刊图片
     def page_img(self):
         try:
             img_url = self.turn_to_soup().find('img', {'class': 'vol-cover'})
             r = requests.get(img_url['src'])
-            self.mkdir()
+            self.mkdir(img_url['alt'])
             with open(img_url['alt'] + '.jpg', 'wb') as img:
                 img.write(r.content)
         except Exception as e:
