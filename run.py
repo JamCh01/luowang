@@ -3,6 +3,7 @@
 # Created by Jam on 2016/9/13.
 
 import requests
+import time
 import threading
 import os
 import random
@@ -19,6 +20,14 @@ def max_num():
 
 max_num = max_num()
 work_queue = range(1, int(max_num) + 1)
+
+
+def mkdir(name):
+    if os.path.exists(name):
+        pass
+    else:
+        os.makedirs(name)
+    os.chdir(name)
 
 
 def page_source(page_id):
@@ -47,6 +56,8 @@ class img(threading.Thread):
                     page_id).find(
                     'img', {
                         'class': 'vol-cover'})
+                name = 'vol%s ' % (page_id) + img_url['alt']
+                mkdir(name)
                 r = requests.get(img_url['src'])
                 with open(img_url['alt'] + '.jpg', 'wb') as img:
                     img.write(r.content)
@@ -54,6 +65,13 @@ class img(threading.Thread):
                 print str(e)
         for i in work_queue:
             download(i)
+            os.chdir('../')
+
+    def stop(self):
+        self.stopped = True
+
+    def is_stoped(self):
+        return self.stopped
 
 
 class song(img):
@@ -67,7 +85,11 @@ class song(img):
             headers = {
                 'User-Agent': _ua
             }
-            songs = page_source(page_id).find_all(
+            soup = page_source(page_id)
+            title = soup.find('title').text
+            title = 'vol%s ' % (page_id) + title.split('-')[0]
+            mkdir(title)
+            songs = soup.find_all(
                 'div', {'class': 'player-wrapper'})
             song_list = []
             for song in songs:
@@ -89,13 +111,23 @@ class song(img):
                     try:
                         with open(song + '.mp3', 'wb') as song:
                             song.write(r.content)
-
+                        time.sleep(1)
                     except Exception as e:
                         print str(e)
                         with open(song + '.mp3', 'wb') as song:
                             song.write(r.content)
         for i in work_queue:
             download(i)
+            os.chdir('../')
+
+    def stop(self):
+        self.stopped = True
+
+    def is_stoped(self):
+        return self.stopped
+
 
 thread0 = song()
 thread0.start()
+thread0.stop()
+thread0.join()
