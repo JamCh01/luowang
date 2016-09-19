@@ -27,6 +27,7 @@ def mkdir(name):
         pass
     else:
         os.makedirs(name)
+    print os.getcwd()
     os.chdir(name)
 
 
@@ -57,12 +58,14 @@ class img(threading.Thread):
                     'img', {
                         'class': 'vol-cover'})
                 name = 'vol%s ' % (page_id) + img_url['alt']
+                print name
                 mkdir(name)
                 r = requests.get(img_url['src'])
                 with open(img_url['alt'] + '.jpg', 'wb') as img:
                     img.write(r.content)
             except Exception as e:
                 print str(e)
+
         for i in work_queue:
             download(i)
             os.chdir('../')
@@ -88,6 +91,7 @@ class song(img):
             soup = page_source(page_id)
             title = soup.find('title').text
             title = 'vol%s ' % (page_id) + title.split('-')[0]
+            print title
             mkdir(title)
             songs = soup.find_all(
                 'div', {'class': 'player-wrapper'})
@@ -126,8 +130,11 @@ class song(img):
     def is_stoped(self):
         return self.stopped
 
-
+thread1 = img()
+thread1.start()
+thread1.join()
+thread1.stop()
 thread0 = song()
 thread0.start()
-thread0.stop()
 thread0.join()
+thread0.stop()
