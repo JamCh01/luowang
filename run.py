@@ -22,12 +22,12 @@ max_num = max_num()
 work_queue = range(1, int(max_num) + 1)
 
 
+
 def mkdir(name):
     if os.path.exists(name):
         pass
     else:
         os.makedirs(name)
-    print os.getcwd()
     os.chdir(name)
 
 
@@ -58,7 +58,6 @@ class img(threading.Thread):
                     'img', {
                         'class': 'vol-cover'})
                 name = 'vol%s ' % (page_id) + img_url['alt']
-                print name
                 mkdir(name)
                 r = requests.get(img_url['src'])
                 with open(img_url['alt'] + '.jpg', 'wb') as img:
@@ -91,7 +90,6 @@ class song(img):
             soup = page_source(page_id)
             title = soup.find('title').text
             title = 'vol%s ' % (page_id) + title.split('-')[0]
-            print title
             mkdir(title)
             songs = soup.find_all(
                 'div', {'class': 'player-wrapper'})
@@ -111,15 +109,36 @@ class song(img):
                 else:
                     url = 'http://luoo-mp3.kssws.ks-cdn.com/low/luoo/radio' + \
                         str(page_id) + '/' + str(song_num) + '.mp3'
-                    r = requests.get(url, headers=headers)
+                    referer = 'http://www.luoo.net/music/'+ str(page_id)
+                    headers = {
+                        'Host': 'luoo-mp3.kssws.ks-cdn.com',
+                        'Proxy-Connection': 'keep-alive',
+                        'Accept-Encoding': 'identity;q=1, *;q=0',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36',
+                        'Accept': '*/*',
+                        'Referer': referer,
+                        'Accept-Language': 'zh-CN,zh;q=0.8',
+                        'Range': 'bytes=0-'
+                    }
+
+                    local_name = song + '.mp3'
+                    r = requests.get(url, stream=True)
+
                     try:
-                        with open(song + '.mp3', 'wb') as song:
-                            song.write(r.content)
-                        time.sleep(1)
+
+                        with open(local_name,'wb') as f:
+                            for chunk in r.iter_content(chunk_size=1024):
+                                if chunk:
+                                    f.write(chunk)
+                                    f.flush()
+
+                        time.sleep(random.randrange(1,2))
                     except Exception as e:
-                        print str(e)
-                        with open(song + '.mp3', 'wb') as song:
-                            song.write(r.content)
+                         print str(e)
+                         with open(local_name, 'wb') as song:
+                             song.write(r.content)
+                    song_num += 1
+                    time.sleep(random.randint(1, 10))
         for i in work_queue:
             download(i)
             os.chdir('../')
@@ -130,10 +149,12 @@ class song(img):
     def is_stoped(self):
         return self.stopped
 
-thread1 = img()
-thread1.start()
-thread1.join()
-thread1.stop()
+
+
+#thread1 = img()
+#thread1.start()
+#thread1.join()
+#thread1.stop()
 thread0 = song()
 thread0.start()
 thread0.join()
