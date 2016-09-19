@@ -10,6 +10,8 @@ import random
 import ua
 from bs4 import BeautifulSoup
 
+# 获得落网最新期刊编号
+
 
 def max_num():
     r = requests.get(url='http://www.luoo.net/music/')
@@ -19,8 +21,11 @@ def max_num():
     return _max
 
 max_num = max_num()
+
+# 生成一个任务队列
 work_queue = range(1, int(max_num) + 1)
 
+# 创建相应的文件目录
 
 
 def mkdir(name):
@@ -29,6 +34,8 @@ def mkdir(name):
     else:
         os.makedirs(name)
     os.chdir(name)
+
+# 获得某期刊的页面源码
 
 
 def page_source(page_id):
@@ -43,6 +50,8 @@ def page_source(page_id):
         'html.parser',
         from_encoding='utf8')
     return soup
+
+# 线程：下载图片
 
 
 class img(threading.Thread):
@@ -75,6 +84,8 @@ class img(threading.Thread):
     def is_stoped(self):
         return self.stopped
 
+# 线程：下载歌曲
+
 
 class song(img):
 
@@ -83,10 +94,6 @@ class song(img):
 
     def run(self):
         def download(page_id):
-            _ua = random.choice(ua.user_agent)
-            headers = {
-                'User-Agent': _ua
-            }
             soup = page_source(page_id)
             title = soup.find('title').text
             title = 'vol%s ' % (page_id) + title.split('-')[0]
@@ -99,6 +106,8 @@ class song(img):
                 song_info = song_info.replace(':', '-')
                 song_list.append(song_info)
             song_num = 1
+
+            # 格式化文件名
             name_reg = ['<', '>', '/', '\\', '|', '\"', '*', '?', '&', '$']
             for song in song_list:
                 for i in name_reg:
@@ -109,34 +118,24 @@ class song(img):
                 else:
                     url = 'http://luoo-mp3.kssws.ks-cdn.com/low/luoo/radio' + \
                         str(page_id) + '/' + str(song_num) + '.mp3'
-                    referer = 'http://www.luoo.net/music/'+ str(page_id)
-                    headers = {
-                        'Host': 'luoo-mp3.kssws.ks-cdn.com',
-                        'Proxy-Connection': 'keep-alive',
-                        'Accept-Encoding': 'identity;q=1, *;q=0',
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36',
-                        'Accept': '*/*',
-                        'Referer': referer,
-                        'Accept-Language': 'zh-CN,zh;q=0.8',
-                        'Range': 'bytes=0-'
-                    }
 
                     local_name = song + '.mp3'
                     r = requests.get(url, stream=True)
 
                     try:
-
-                        with open(local_name,'wb') as f:
+                        # 断点重传
+                        with open(local_name, 'wb') as f:
                             for chunk in r.iter_content(chunk_size=1024):
                                 if chunk:
                                     f.write(chunk)
                                     f.flush()
 
-                        time.sleep(random.randrange(1,2))
+                        time.sleep(random.randrange(1, 2))
                     except Exception as e:
-                         print str(e)
-                         with open(local_name, 'wb') as song:
-                             song.write(r.content)
+                        print str(e)
+                        # 如果出现异常,那就直接下载吧～
+                        with open(local_name, 'wb') as song:
+                            song.write(r.content)
                     song_num += 1
                     time.sleep(random.randint(1, 10))
         for i in work_queue:
@@ -150,11 +149,11 @@ class song(img):
         return self.stopped
 
 
+thread1 = img()
+thread1.start()
+thread1.join()
+thread1.stop()
 
-#thread1 = img()
-#thread1.start()
-#thread1.join()
-#thread1.stop()
 thread0 = song()
 thread0.start()
 thread0.join()
