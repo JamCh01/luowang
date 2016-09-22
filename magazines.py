@@ -9,6 +9,7 @@ import os
 import random
 import ua
 from bs4 import BeautifulSoup
+import gevent
 
 # 获得落网最新期刊编号
 
@@ -23,7 +24,11 @@ def max_num():
 max_num = max_num()
 
 # 生成一个任务队列
-work_queue = range(1, int(max_num) + 1)
+work = range(1, int(max_num) + 1)
+
+def work_queue():
+    for i in work:
+        yield i
 
 # 创建相应的文件目录
 
@@ -74,7 +79,7 @@ class img(threading.Thread):
             except Exception as e:
                 print str(e)
 
-        for i in work_queue:
+        for i in work_queue():
             download(i)
             os.chdir('../')
 
@@ -138,7 +143,7 @@ class song(img):
                             song.write(r.content)
                     song_num += 1
                     time.sleep(random.randint(1, 10))
-        for i in work_queue:
+        for i in work_queue():
             download(i)
             os.chdir('../')
 
