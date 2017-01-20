@@ -1,11 +1,13 @@
 import queue
-import config
 import requests
 import threading
 from bs4 import BeautifulSoup
 
 download_queue = queue.Queue()
+download_lock = threading.Lock()
+
 class spider4id(object):
+
     def __init__(self, page_id):
         self.headers = {
             'Host':
@@ -19,23 +21,22 @@ class spider4id(object):
         self.page_id = page_id
         self.url = 'http://www.luoo.net/music/%s' % page_id
 
-
     def spider(self):
         r = requests.get(url=self.url, headers=self.headers)
         res = (r.text.encode(r.encoding).decode('utf8'))
         soup = BeautifulSoup(res, 'html.parser')
-        if soup.find('div',{'class':'error-msg'}):
+        if soup.find('div', {'class': 'error-msg'}):
             return False
         else:
             pass
 
-        music_player_node = soup.find('div',{'id':'luooPlayerPlaylist'}).find('ul').find_all('li')
-        return len(music_player_node)+1
-
-
+        music_player_node = soup.find(
+            'div', {'id': 'luooPlayerPlaylist'}).find('ul').find_all('li')
+        return len(music_player_node) + 1
 
 
 def mp3url(page_id):
+    # 落网匹配规则
     base_url = 'http://mp3-cdn.luoo.net/low'
 
     if page_id == 497:
@@ -92,15 +93,20 @@ def mp3url(page_id):
     else:
         return '%s/luoo/radio%s/' % (base_url, page_id)
 
+
 class download_producer(threading.Thread):
+    '''
+    下载的生产者，根据匹配规则和统计共有多少歌曲生成队列
+    '''
     def __init__(self, page_id):
         threading.Thread.__init__(self)
         threading.Thread.name = 'download_producer'
         self.page_id = page_id
+
     def run(self):
+        download_lock.acquire()
         tmp = spider4id(page_id=self.page_id)
         song_list = tmp.spider()
-
 
         if song_list:
             for i in range(1, song_list):
@@ -111,28 +117,40 @@ class download_producer(threading.Thread):
                 download_queue.put(download_url)
 
 
-
-
 class download_consumer(threading.Thread):
+    '''
+    下载的消费者，从队列中取出相应的url下载
+    '''
     def __init__(self):
         threading.Thread.__init__(self)
         threading.Thread.name = 'download_consumer'
 
     def run(self):
+        download_lock.release()
         while True:
             try:
                 song_url = download_queue.get()
                 print(song_url)
-                r = requests.get(url=song_url,stream=True)
+                r = requests.get(url=song_url, stream=True)
+                print(r.status_code)
                 if r.status_code != 200:
-                    with open('error.txt', 'r') as error:
-                        error.write('download_file %s' % song_url+ '\n')
+                    with open('error.txt', 'w') as error:
+                        error.write('download_file %s' % song_url + '\n')
+                    error.close()
                     continue
-                
+                with open(song_url.split('/')[-1],'wb') as song:
+                    song.write(r.content)
+
             except Exception as e:
                 break
 
-test = download_producer(page_id=886)
-test.start()
-test_ = download_consumer()
-test_.start()
+
+def main(page_id):
+
+    test = download_producer(page_id=page_id)
+    test.start()
+    test_ = download_consumer()
+    test_.start()
+
+if __name__ == '__main__':
+    main(page_id=886)
