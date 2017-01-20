@@ -1,8 +1,9 @@
+import os
 import queue
 import requests
 import threading
 from bs4 import BeautifulSoup
-
+from mutagen.mp3 import MP3
 download_queue = queue.Queue()
 download_lock = threading.Lock()
 
@@ -117,6 +118,7 @@ class download_producer(threading.Thread):
                 download_queue.put(download_url)
 
 
+
 class download_consumer(threading.Thread):
     '''
     下载的消费者，从队列中取出相应的url下载
@@ -130,19 +132,23 @@ class download_consumer(threading.Thread):
         while True:
             try:
                 song_url = download_queue.get()
-                print(song_url)
-                r = requests.get(url=song_url, stream=True)
-                print(r.status_code)
-                if r.status_code != 200:
-                    with open('error.txt', 'w') as error:
-                        error.write('download_file %s' % song_url + '\n')
-                    error.close()
-                    continue
-                with open(song_url.split('/')[-1],'wb') as song:
-                    song.write(r.content)
-
             except Exception as e:
                 break
+
+            r = requests.get(url=song_url, stream=True)
+            if r.status_code != 200:
+                with open('error.txt', 'w') as error:
+                    error.write('download_file %s' % song_url + '\n')
+                error.close()
+                continue
+            song_name = song_url.split('/')[-1]
+            with open(song_name,'wb') as song:
+                song.write(r.content)
+            print(song_name)
+            file = MP3(song_name)
+            artist = str(file['TPE1']).encode(encoding='latin1').decode('gb18030')
+            new_name = str(file['TIT2']).encode(encoding='latin1').decode('gb18030')
+            os.rename(song_name,'%s-%s.mp3' % (artist, new_name))
 
 
 def main(page_id):
