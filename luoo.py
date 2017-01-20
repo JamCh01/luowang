@@ -132,31 +132,46 @@ class download_consumer(threading.Thread):
         while True:
             try:
                 song_url = download_queue.get()
+                r = requests.get(url=song_url, stream=True)
+                if r.status_code != 200:
+                    with open('error.txt', 'w') as error:
+                        error.write('download_file %s' % song_url + '\n')
+                    error.close()
+                    continue
+                song_name = song_url.split('/')[-1]
+
+                if os.path.exists('%s/%s' % (save_path, song_name)):
+                    continue
+                with open('%s/%s' % (save_path, song_name),'wb') as song:
+                    song.write(r.content)
+                print('%s/%s' % (save_path, song_name))
+                file = MP3('%s/%s' % (save_path, song_name))
+                artist = str(file['TPE1']).encode(encoding='latin1').decode('gb18030')
+                new_name = str(file['TIT2']).encode(encoding='latin1').decode('gb18030')
+                try:
+                    os.rename('%s/%s' % (save_path, song_name),'%s/%s' % (save_path, '%s-%s.mp3' % (artist, new_name)))
+                except Exception as e:
+                    os.remove('%s/%s' % (save_path, song_name))
             except Exception as e:
+
                 break
 
-            r = requests.get(url=song_url, stream=True)
-            if r.status_code != 200:
-                with open('error.txt', 'w') as error:
-                    error.write('download_file %s' % song_url + '\n')
-                error.close()
-                continue
-            song_name = song_url.split('/')[-1]
-            with open(song_name,'wb') as song:
-                song.write(r.content)
-            print(song_name)
-            file = MP3(song_name)
-            artist = str(file['TPE1']).encode(encoding='latin1').decode('gb18030')
-            new_name = str(file['TIT2']).encode(encoding='latin1').decode('gb18030')
-            os.rename(song_name,'%s-%s.mp3' % (artist, new_name))
-
-
 def main(page_id):
-
     test = download_producer(page_id=page_id)
     test.start()
+    test.join()
     test_ = download_consumer()
     test_.start()
+    test_.join()
 
 if __name__ == '__main__':
-    main(page_id=886)
+    page_id = 886
+    save_path = page_id
+    if os.path.exists(str(save_path)):
+        pass
+    else:
+        os.makedirs(str(save_path))
+
+    main(page_id=page_id)
+
+    print(os.listdir(str(save_path)))
