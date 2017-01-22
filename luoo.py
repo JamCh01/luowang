@@ -27,14 +27,7 @@ class spider4id(object):
         res = (r.text.encode(r.encoding).decode('utf8'))
         soup = BeautifulSoup(res, 'html.parser')
         return soup
-        if soup.find('div', {'class': 'error-msg'}):
-            return False
-        else:
-            pass
 
-        music_player_node = soup.find(
-            'div', {'id': 'luooPlayerPlaylist'}).find('ul').find_all('li')
-        return len(music_player_node) + 1
 
 
 def mp3url(page_id):
