@@ -26,6 +26,7 @@ class spider4id(object):
         r = requests.get(url=self.url, headers=self.headers)
         res = (r.text.encode(r.encoding).decode('utf8'))
         soup = BeautifulSoup(res, 'html.parser')
+        return soup
         if soup.find('div', {'class': 'error-msg'}):
             return False
         else:
@@ -107,15 +108,22 @@ class download_producer(threading.Thread):
     def run(self):
         download_lock.acquire()
         tmp = spider4id(page_id=self.page_id)
-        song_list = tmp.spider()
+        soup = tmp.spider()
+        if soup.find('div', {'class': 'error-msg'}):
+            return
+        else:
+            pass
 
-        if song_list:
-            for i in range(1, song_list):
-                if len(str(i)) == 1:
-                    i = '0%s' % i
-                base_url = mp3url(page_id=self.page_id)
-                download_url = '%s%s.mp3' % (base_url, i)
-                download_queue.put(download_url)
+        music_player_node = soup.find(
+            'div', {'id': 'luooPlayerPlaylist'}).find('ul').find_all('li')
+        song_list = len(music_player_node) + 1
+
+        for i in range(1, song_list):
+            if len(str(i)) == 1:
+                i = '0%s' % i
+            base_url = mp3url(page_id=self.page_id)
+            download_url = '%s%s.mp3' % (base_url, i)
+            download_queue.put(download_url)
 
 
 
@@ -156,6 +164,37 @@ class download_consumer(threading.Thread):
 
                 break
 
+def magazine_info(page_id):
+    '''期刊信息，包括期刊名，期刊描述，期刊背景图'''
+    info = spider4id(page_id=page_id)
+    page_source = info.spider()
+    # 期刊名
+    try:
+        magazine_name = page_source.find('title').text.split('-')[0].strip()
+    except Exception as e:
+        magazine_name = ''
+
+    #期刊背景图
+    try:
+        magazine_img = page_source.find('div',{'id':'volCoverWrapper'}).find('img')['src']
+    except Exception as e:
+        magazine_img = ''
+
+    # 期刊描述
+    try:
+        magazine_dec = page_source.find('div',{'class':'vol-desc'}).text
+    except Exception as e:
+        magazine_dec = ''
+
+    res = {
+        'magazine_id':page_id,
+        'magazine_name':magazine_name,
+        'magazine_img':magazine_img,
+        'magazine_dec':magazine_dec
+    }
+    return res
+
+
 def main(page_id):
     test = download_producer(page_id=page_id)
     test.start()
@@ -173,5 +212,3 @@ if __name__ == '__main__':
         os.makedirs(str(save_path))
 
     main(page_id=page_id)
-
-    print(os.listdir(str(save_path)))
