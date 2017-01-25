@@ -8,10 +8,12 @@ from luoo import mp3url
 download_queue = queue.Queue()
 download_lock = threading.Lock()
 
+
 class download_producer(threading.Thread):
     '''
     下载的生产者，根据匹配规则和统计共有多少歌曲生成队列
     '''
+
     def __init__(self, magazine_id):
         threading.Thread.__init__(self)
         threading.Thread.name = 'download_producer'
@@ -38,11 +40,11 @@ class download_producer(threading.Thread):
             download_queue.put(download_url)
 
 
-
 class download_consumer(threading.Thread):
     '''
     下载的消费者，从队列中取出相应的url下载
     '''
+
     def __init__(self):
         threading.Thread.__init__(self)
         threading.Thread.name = 'download_consumer'
@@ -62,19 +64,29 @@ class download_consumer(threading.Thread):
 
                 if os.path.exists('%s/%s' % (save_path, song_name)):
                     continue
-                with open('%s/%s' % (save_path, song_name),'wb') as song:
+                with open('%s/%s' % (save_path, song_name), 'wb') as song:
                     song.write(r.content)
                 print('%s/%s' % (save_path, song_name))
+                # 使用mutagen读取id3信息，更改歌曲名
                 file = MP3('%s/%s' % (save_path, song_name))
-                artist = str(file['TPE1']).encode(encoding='latin1').decode('gb18030')
-                new_name = str(file['TIT2']).encode(encoding='latin1').decode('gb18030')
+                artist = str(
+                    file['TPE1']).encode(
+                    encoding='latin1').decode('gb18030')
+                new_name = str(
+                    file['TIT2']).encode(
+                    encoding='latin1').decode('gb18030')
                 try:
-                    os.rename('%s/%s' % (save_path, song_name),'%s/%s' % (save_path, '%s-%s.mp3' % (artist, new_name)))
+                    os.rename(
+                        '%s/%s' %
+                        (save_path, song_name), '%s/%s' %
+                        (save_path, '%s-%s.mp3' %
+                         (artist, new_name)))
                 except Exception as e:
                     os.remove('%s/%s' % (save_path, song_name))
             except Exception as e:
 
                 break
+
 
 def main(magazine_id):
     test = download_producer(magazine_id=magazine_id)
