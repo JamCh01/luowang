@@ -1,26 +1,15 @@
 import os
-import queue
-import requests
-import threading
-from mutagen.mp3 import MP3
-from luoo import spider4musician
+import config
+import pyglet
 
-class download_producer(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        threading.Thread.name = 'download_producer'
+download_folder = config.download_folder
 
-    def run(self):
-        pass
+def play_music(folder):
+    if os.path.exists(folder) is not True:
+        return
 
-class download_consumer(threading.Thread):
-    '''
-    下载的消费者，从队列中取出相应的url下载
-    '''
-    def __init__(self):
-        threading.Thread.__init__(self)
-        threading.Thread.name = 'download_consumer'
-
-    def run(self):
-        pass
-
+    for music in os.listdir(folder):
+        music = r'%s\%s\%s'% (os.getcwd(), folder, music)
+        a = pyglet.media.load(music)
+        a.play()
+play_music(folder='886')
