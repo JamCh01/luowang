@@ -1,7 +1,5 @@
 import os
 import config
-import pyglet
-
 download_folder = config.download_folder
 
 def play_music(folder):
@@ -9,7 +7,7 @@ def play_music(folder):
         return
 
     for music in os.listdir(folder):
-        music = r'%s\%s\%s'% (os.getcwd(), folder, music)
-        a = pyglet.media.load(music)
-        a.play()
+        print(music)
+
+
 play_music(folder='886')
