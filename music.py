@@ -1,10 +1,12 @@
 import os
 import queue
+import config
 import requests
 import threading
 from mutagen.mp3 import MP3
 from luoo import spider4id
 from luoo import mp3url
+
 download_queue = queue.Queue()
 download_lock = threading.Lock()
 
@@ -61,7 +63,6 @@ class download_consumer(threading.Thread):
                     error.close()
                     continue
                 song_name = song_url.split('/')[-1]
-
                 if os.path.exists('%s/%s' % (save_path, song_name)):
                     continue
                 with open('%s/%s' % (save_path, song_name), 'wb') as song:
@@ -84,7 +85,6 @@ class download_consumer(threading.Thread):
                 except Exception as e:
                     os.remove('%s/%s' % (save_path, song_name))
             except Exception as e:
-
                 break
 
 

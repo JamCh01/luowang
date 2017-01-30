@@ -1,5 +1,6 @@
 .idea/
-*.pyc
 *.mp3
+AVbin10/
 test.py
 __pycache__/
+886/
