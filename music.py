@@ -55,7 +55,7 @@ class download_consumer(threading.Thread):
         download_lock.release()
         while True:
             try:
-                song_url = download_queue.get()
+                song_url = download_queue.get(block=False)
                 r = requests.get(url=song_url, stream=True)
                 if r.status_code != 200:
                     with open('error.txt', 'w') as error:
@@ -94,7 +94,6 @@ def main(magazine_id):
     test.join()
     test_ = download_consumer()
     test_.start()
-    test_.join()
 
 if __name__ == '__main__':
     magazine_id = 886
