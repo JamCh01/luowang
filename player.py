@@ -13,8 +13,7 @@ def play_music(folder):
         print(music)
         play = pyglet.media.load(music)
         play.play()
-        pyglet.app.run()
-        pyglet.app.exit()
+        # todo 循环播放
 
 
 def main(magazine_id):
