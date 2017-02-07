@@ -1,8 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 
-
 class common(object):
+    '''
+    基础页面爬虫
+    '''
     def __init__(self):
         self.headers = {
             'Host':
@@ -26,21 +28,10 @@ class spider4id(common):
         self.url = 'http://www.luoo.net/music/%s' % magazine_id
 
 
-class spider4musician(common):
-    def __init__(self, musician_id):
-        common.__init__(self)
-        self.headers['Referer'] = 'http://www.luoo.net/musician/'
-        self.url = 'http://www.luoo.net/musician/?p=%s' % musician_id
-
-
-
-
-
-
 def mp3url(magazine_id):
     # 落网匹配规则
     base_url = 'http://mp3-cdn.luoo.net/low'
-
+    magazine_id = int(magazine_id)
     if magazine_id == 497:
         return '%s/luoo/s1/' % (base_url)
 
