@@ -19,8 +19,6 @@ class music(Base):
     music_name = Column(String(256))
     magazine_id = Column(String(256))
     music_artist = Column(String(256))
-    music_collection = Column(String(256))
-    music_play_time = Column(String(256))
     music_save_path = Column(String(256))
 
 class favorite(Base):
@@ -29,6 +27,4 @@ class favorite(Base):
     music_name = Column(String(256))
     magazine_id = Column(String(256))
     music_artist = Column(String(256))
-    music_collection = Column(String(256))
-    music_play_time = Column(String(256))
     music_save_path = Column(String(256))
