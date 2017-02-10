@@ -1,10 +1,19 @@
+import os
+import queue
+import logging
 import requests
+import platform
+import threading
+from mutagen.mp3 import MP3
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+
 
 class common(object):
     '''
     基础页面爬虫
     '''
+
     def __init__(self):
         self.headers = {
             'Host':
@@ -13,11 +22,15 @@ class common(object):
                 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
         }
         self.url = ''
+
     def spider(self):
-        r = requests.get(url=self.url, headers=self.headers)
+        s = requests.Session()
+        s.mount(prefix=self.url, adapter=HTTPAdapter(max_retries=5))
+        r = s.get(url=self.url, headers=self.headers)
         res = (r.text.encode(r.encoding).decode('utf8'))
         soup = BeautifulSoup(res, 'html.parser')
         return soup
+
 
 class spider4id(common):
 
@@ -87,3 +100,100 @@ def mp3url(magazine_id):
         return '%s/luoo/radio%s/' % (base_url, magazine_id)
 
 
+download_lock = threading.Lock()
+download_queue = queue.Queue()
+file_name_ignore_list = ['/', '\\', ':', '"', '<', '>', '?', '|', '*']
+
+
+class download_producer(threading.Thread):
+    '''
+    下载的生产者，根据匹配规则和统计共有多少歌曲生成队列
+    '''
+
+    def __init__(self, magazine_id):
+        threading.Thread.__init__(self)
+        threading.Thread.name = 'download_producer'
+        self.magazine_id = magazine_id
+
+    def run(self):
+        download_lock.acquire()
+        tmp = spider4id(magazine_id=self.magazine_id)
+        soup = tmp.spider()
+        if soup.find('div', {'class': 'error-msg'}):
+            return
+        else:
+            pass
+
+        music_player_node = soup.find(
+            'div', {'id': 'luooPlayerPlaylist'}).find('ul').find_all('li')
+        song_list = len(music_player_node) + 1
+
+        for i in range(1, song_list):
+            if len(str(i)) == 1:
+                i = '0%s' % i
+            base_url = mp3url(magazine_id=self.magazine_id)
+            download_url = '%s%s.mp3' % (base_url, i)
+            download_queue.put(download_url)
+            pass
+
+
+
+class download_consumer(threading.Thread):
+    '''
+    下载的消费者，从队列中取出相应的url下载
+    '''
+
+    def __init__(self, magazine_id):
+        threading.Thread.__init__(self)
+        threading.Thread.name = 'download_consumer'
+        self.save_path = magazine_id
+
+    def run(self):
+        for i in range(download_queue.qsize()):
+            song_url = download_queue.get(block=False)
+            r = requests.get(url=song_url, stream=True)
+
+            s = requests.Session()
+            s.mount(prefix=song_url, adapter=HTTPAdapter(max_retries=5))
+            r = s.get(url=song_url)
+
+            if r.status_code != 200:
+                logging.warning(
+                    'this music cant download -> {}'.format(song_url))
+                pass
+
+            song_name = song_url.split('/')[-1]
+
+            if os.path.exists('{}/{}'.format(self.save_path, song_name)):
+                continue
+
+            with open('{}/{}'.format(self.save_path, song_name), 'wb') as song:
+                song.write(r.content)
+
+            logging.info('{}/{} downloaded'.format(self.save_path, song_name))
+
+            # 使用mutagen读取id3信息，更改歌曲名
+            file = MP3('%s/%s' % (self.save_path, song_name))
+            artist = str(
+                file['TPE1']).encode(
+                encoding='latin1').decode('gb18030')
+            music_name = str(
+                file['TIT2']).encode(
+                encoding='latin1').decode('gb18030')
+
+            # 在Windows平台中，文件名不能包括某些字符
+            if 'Windows' in platform.system():
+                for i in file_name_ignore_list:
+                    music_name = music_name.replace(i, '')
+                    artist = artist.replace(i, '')
+                    pass
+                pass
+            try:
+                os.rename('{}/{}'.format(self.save_path,song_name),
+                          '{}/{}'.format(self.save_path,
+                                         '{}-{}.mp3'.format(artist,music_name)))
+                pass
+
+            except Exception as e:
+                os.remove('%s/%s' % (self.save_path, song_name))
+                pass
