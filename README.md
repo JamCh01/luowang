@@ -1,8 +1,21 @@
-# Usage
-First, make sure you have installed Python3 correctly, and you should install those modules----requests, bs4, mutagen
+# 简单的luoo.net播放器
 
-Then download this repo(git or download zip)
+## 说明
+确保正确看装Python3，不支持Python2.X
+请确保已经安装AVbin，[下载地址](http://avbin.github.io/AVbin/Download.html)
 
-Finally, edit the ```music.py``` and change ```magazine_id``` to your like one, then
-(I think this way to use is a mistake, I will fix it in the future)
-```python(3) music.py```
+## 使用
+1. 下载
+```
+git clone https://github.com/jamcplusplus/luowang.git
+```
+2. 进入目录，根据requirements.txt安装依赖项目
+```
+pip3 install -r requirements.txt
+```
+
+3. 执行程序，参数为luoo期刊编号，如：
+```
+python3 music.py 892
+```
+

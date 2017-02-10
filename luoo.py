@@ -151,8 +151,6 @@ class download_consumer(threading.Thread):
     def run(self):
         for i in range(download_queue.qsize()):
             song_url = download_queue.get(block=False)
-            r = requests.get(url=song_url, stream=True)
-
             s = requests.Session()
             s.mount(prefix=song_url, adapter=HTTPAdapter(max_retries=5))
             r = s.get(url=song_url)
