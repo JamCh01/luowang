@@ -45,7 +45,15 @@ class music_player(object):
             pass
 
         end_time = datetime.datetime.now()
-        minute = (start_time - end_time) / 60
-        second = (start_time - end_time) % 60
+        minute = (end_time - start_time).seconds // 60
+        second = (end_time - start_time).seconds % 60
         print('播放结束，总共耗时{}min {}s，再会'.format(str(minute), str(second)))
         return
+
+folder = '891'
+import os
+# 拼接歌曲存储地址
+player = music_player(music_list=[
+    '{}/{}'.format(folder, i) for i in os.listdir(folder)])
+# 启动播放
+player.play()
