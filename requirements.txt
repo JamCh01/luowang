@@ -1,0 +1,4 @@
+pyglet==1.2.4
+mutagen==1.36
+requests==2.12.4
+beautifulsoup4==4.5.1
